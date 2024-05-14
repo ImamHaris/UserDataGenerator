@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use GuzzleHttp\Client;
 use App\Models\User;
 
 class WebhookController extends Controller
@@ -15,7 +16,6 @@ class WebhookController extends Controller
      */
     public function handleWebhook(Request $request)
     {
-        // Assuming the incoming data is in JSON format
         $data = $request->json()->all();
 
         // Validate incoming data
@@ -34,5 +34,43 @@ class WebhookController extends Controller
 
         // Return a success response
         return response()->json(['message' => 'User created successfully'], 201);
+    }
+
+    public function generateRandomUser(Request $request)
+    {
+        $data = $request->json()->all();
+
+        // Validate incoming data
+        $validatedData = $request->validate([
+            'link' => 'required|string'
+        ]);
+
+        $client = new Client();
+        $response = $client->get($validatedData['link']);
+        $userData = json_decode($response->getBody()->getContents(), true);
+        
+        if (isset($userData['results'])){
+            foreach ($userData['results'] as $userData) {
+                // Store User
+                $this->createUser($userData);
+            }
+            // Return a success response
+            return response()->json(['message' => 'User created successfully'], 201);
+        } else {
+            // Return a failed response
+            return response()->json(['message' => 'Failed to create user'], 500);
+        }
+    }
+
+    private function createUser($userData)
+    {
+        $user = new User();
+        $user->name = $userData['name']['first'];
+        $user->email = $userData['email'];
+        $user->password = $userData['login']['password'];
+        
+        $user->save();
+
+        return $user;
     }
 }

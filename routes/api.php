@@ -9,3 +9,4 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:api');
 
 Route::post('/handleWebhook', [WebhookController::class, 'handleWebhook']);
+Route::post('/generateRandomUser', [WebhookController::class, 'generateRandomUser']);
